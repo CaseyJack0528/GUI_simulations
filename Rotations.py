@@ -6,18 +6,20 @@ import numpy as np
 
 ##########################################################################################
 #Cube properties
-cube_length = 500
+cube_length = 200
 cube_width = 100
 cube_height = 100
 cube_center = 0 # [x, y, z] or 0 for cube at center of screen
 
 #Rotation properties 
-x_rotation_speed = 50 #deg/sec
-y_rotation_speed = 10 #deg/sec
-z_rotation_speed = 0 #deg/sec
+x_rotation_speed = 100 #deg/sec
+y_rotation_speed = 100 #deg/sec
+z_rotation_speed = 50 #deg/sec
 ##########################################################################################
 
 vertex_size = 5
+cube_color = (255, 0, 255)
+scroll_sensitivity = 1.07
 
 pygame.init()
 window_size = pygame.display.Info()
@@ -39,7 +41,6 @@ z_anglei = 0
 
 if cube_center == 0:
     cube_center = [int(screen_width/2), int(screen_height/2), 0]
-
 screen = pygame.display.set_mode((screen_width, screen_height))
 running = True
 
@@ -52,25 +53,27 @@ class circle:
         self.x = x
         self.y = y
         self.z = z
+        self.xi = x
+        self.yi = y
+        self.zi = z
 
     def draw_circle(self):
         pygame.draw.circle(screen, self.color, (int(self.x + cube_center[0]), int(self.y + cube_center[1])), self.radius)
 
 
     def update_position(self):
-        position_array = np.array([self.x, self.y, self.z])
-        rotation_matrix = np.array(Rx)
-        print(rotation_matrix)
-        temp_array = np.dot(rotation_matrix, position_array)
-        #print(temp_array)
-        self.x = temp_array[0]#[0]
-        self.y = temp_array[1]#[0]
-        self.z = temp_array[2]#[0]
+        position_array = [[self.xi], [self.yi], [self.zi]]
+        temp_array = np.dot(Rx, Ry)
+        temp_array = np.dot(Rz, temp_array)
+        temp_array = np.dot(temp_array, position_array)
+        self.x = temp_array[0][0]
+        self.y = temp_array[1][0]
+        self.z = temp_array[2][0]
         
 
 ##########################################################################################
-def matrix_dot_product(matrix_1, matrix_2):
-    pass
+def connect_the_dots(v1, v2):
+    pygame.draw.line(screen, cube_color, (circles[v1].x + cube_center[0], circles[v1].y + cube_center[1]), (circles[v2].x + cube_center[0], circles[v2].y + cube_center[1]), 5)
 
 
 def create_cube(length, width, height):
@@ -146,20 +149,67 @@ create_cube(cube_length, cube_width, cube_height)
 
 circles = [0 for i in range(8)]
 for vertex in range(8):
-    circles[vertex] = circle(vertex_size, (255, 0, 0), cube_vertices[vertex][0], cube_vertices[vertex][1], cube_vertices[vertex][2])
+    circles[vertex] = circle(vertex_size, cube_color, cube_vertices[vertex][0], cube_vertices[vertex][1], cube_vertices[vertex][2])
 ##########################################################################################
 
 clock = pygame.time.Clock()
+
+pygame.joystick.init()
+joy = pygame.joystick.Joystick(0)
+
+mouse_down = 0
 while running:
     screen.fill((0, 0, 0))  # Fill the background with black
     for vertex in range(8):
         circles[vertex].update_position()
         circles[vertex].draw_circle()
 
-    #circles[0].update_position()
+    for i in range(3):
+        connect_the_dots(i, i+1)
+    for i in range(4, 7):
+        connect_the_dots(i, i+1)
+    connect_the_dots(0, 3)
+    connect_the_dots(4, 7)
+    connect_the_dots(0, 4)
+    connect_the_dots(3, 7)
+    connect_the_dots(1, 5)
+    connect_the_dots(2, 6)
+
+
+    #Detect user events (mouse and keyboard)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            #If left mouse button pressed
+            if event.button == 1:
+                mouse_down = 1
+        if event.type == pygame.MOUSEBUTTONUP:
+            #If left mouse button released
+            if event.button == 1:
+                mouse_down = 0
+        if event.type == pygame.MOUSEWHEEL:
+            if event.y > 0:
+                cube_height *= scroll_sensitivity*event.y
+                cube_length *= scroll_sensitivity*event.y
+                cube_width *= scroll_sensitivity*event.y
+            if event.y < 0:
+                cube_height /= -scroll_sensitivity*event.y
+                cube_length /= -scroll_sensitivity*event.y
+                cube_width /= -scroll_sensitivity*event.y
+            if cube_height < 1:
+                cube_height = 1
+            if cube_length < 1:
+                cube_length = 1
+            if cube_width < 1:
+                cube_width = 1
+            create_cube(cube_length, cube_width, cube_height)
+            for vertex in range(8):
+                circles[vertex] = circle(vertex_size, cube_color, cube_vertices[vertex][0], cube_vertices[vertex][1], cube_vertices[vertex][2])
+
+
+    if mouse_down == 1:
+        cube_center = [pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1], 0]
 
     t = pygame.time.get_ticks()/1000
     update_angles()
