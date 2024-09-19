@@ -154,9 +154,6 @@ for vertex in range(8):
 
 clock = pygame.time.Clock()
 
-pygame.joystick.init()
-joy = pygame.joystick.Joystick(0)
-
 mouse_down = 0
 while running:
     screen.fill((0, 0, 0))  # Fill the background with black
