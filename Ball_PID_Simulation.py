@@ -160,8 +160,6 @@ mouse_down = 1
 PID_control = 0
 font = pygame.font.Font('freesansbold.ttf', 32)
 while running:
-    text = font.render('GeeksForGeeks', True, (255, 0, 0))
-    textRect = text.get_rect()
 
     start_time = time.time()
     clock.tick(200)
